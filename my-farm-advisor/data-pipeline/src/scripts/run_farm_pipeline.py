@@ -34,7 +34,13 @@ from bootstrap_runtime import ensure_runtime_environment
 
 ensure_runtime_environment()
 
-from lib.paths import farm_boundary_path, farm_manifest_dir, farm_report_asset_path, grower_manifest_path
+from lib.paths import (
+    farm_boundary_path,
+    farm_interactive_map_path,
+    farm_manifest_dir,
+    farm_report_asset_path,
+    grower_manifest_path,
+)
 from lib.runtime_paths import resolve_runtime_paths
 from reporting_bootstrap import ensure_canonical_data_tree
 
@@ -321,6 +327,12 @@ def main() -> None:
         ("reporting/generate_soil_texture_triangles.py",
          "Soil texture triangles, horizon tables, area-weighted property maps (--all-fields)",
          ("--all-fields",), False),
+        (
+            "reporting/generate_interactive_map.py",
+            "Interactive field map (standalone Leaflet HTML)",
+            (),
+            False,
+        ),
         ("reporting/generate_farm_html.py", "Self-contained HTML report", (), False),
         ("reporting/generate_farm_markdown.py", "Markdown report", (), False),
     ]
@@ -388,6 +400,9 @@ def main() -> None:
             output = farm_report_asset_path(args.grower_slug, args.farm_slug, extension)
             if output.exists():
                 print(f"    {_runtime_relative(output)}")
+        interactive_map = farm_interactive_map_path(args.grower_slug, args.farm_slug)
+        if interactive_map.exists():
+            print(f"    {_runtime_relative(interactive_map)}")
     print("=" * 60)
     print()
 

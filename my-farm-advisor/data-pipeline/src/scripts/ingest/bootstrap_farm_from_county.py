@@ -34,9 +34,11 @@ from naming import field_slug_from_id
 from paths import DATA_ROOT, SCRIPTS_ROOT, farm_boundary_path, farm_manifest_dir, shared_geoadmin_counties_dir
 
 OVERPASS_URLS = [
+    "https://overpass.openstreetmap.fr/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
     "https://lz4.overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
 ]
 COUNTIES_PATH = shared_geoadmin_counties_dir() / "counties_usa.geojson"
 
@@ -107,10 +109,13 @@ def _query_overpass_bbox(bbox: tuple[float, float, float, float]) -> dict:
     out geom;
     """
     last_error: Exception | None = None
+    headers = {"User-Agent": "my-farm-advisor/1.0 (data pipeline)"}
     for endpoint in OVERPASS_URLS:
         for attempt in range(1, 4):
             try:
-                response = requests.post(endpoint, data={"data": query}, timeout=240)
+                response = requests.post(
+                    endpoint, data={"data": query}, headers=headers, timeout=240
+                )
                 response.raise_for_status()
                 return response.json()
             except Exception as exc:

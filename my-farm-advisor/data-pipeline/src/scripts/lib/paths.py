@@ -133,6 +133,15 @@ def farm_report_basename(farm_slug: str, extension: str) -> str:
     return f"{_normalized_farm_artifact_prefix(farm_slug)}_farm_report.{extension}"
 
 
+def farm_interactive_map_basename(farm_slug: str) -> str:
+    """Standalone interactive Leaflet map, kept beside the farm report.
+
+    Uses the raw farm slug rather than the normalized report prefix so the
+    filename stays stable for links already handed to growers.
+    """
+    return f"{validate_path_slug(farm_slug, 'farm_slug')}_interactive_map.html"
+
+
 def farm_weather_basename(
     farm_slug: str,
     start_year: int = 2021,
@@ -200,6 +209,10 @@ def farm_soil_polygons_ontario_path(grower_slug: str, farm_slug: str) -> Path:
 
 def farm_report_asset_path(grower_slug: str, farm_slug: str, extension: str) -> Path:
     return farm_report_path(grower_slug, farm_slug, farm_report_basename(farm_slug, extension))
+
+
+def farm_interactive_map_path(grower_slug: str, farm_slug: str) -> Path:
+    return farm_report_path(grower_slug, farm_slug, farm_interactive_map_basename(farm_slug))
 
 
 def field_dir(grower_slug: str, farm_slug: str, field_slug: str) -> Path:
