@@ -346,6 +346,40 @@ L.geoJSON(data, {
 fields['geometry'] = fields['geometry'].simplify(tolerance=0.001)
 ```
 
+## Farm dashboard from a data-pipeline run
+
+`src/render_farm_map.py` builds the dashboard for a farm that already has a
+canonical runtime tree (boundaries, CDL history, SSURGO summary, DEM summary,
+NDVI card summaries). It writes one HTML file with the data embedded and
+Leaflet inlined, so it opens without a server.
+
+```bash
+export DATA_PIPELINE_DATA_ROOT=~/my-farm-advisor-runtime
+python src/render_farm_map.py --grower il-dekalb-grower --farm dekalb-demo-farm
+# -> <farm>/derived/reports/dekalb-demo-farm_interactive_map.html
+```
+
+The data pipeline runs this automatically as its step 17
+(`data-pipeline/src/scripts/reporting/generate_interactive_map.py`), which also
+links the map from the generated HTML and Markdown farm reports.
+
+Options:
+
+| Flag | Purpose |
+| --- | --- |
+| `--farm-dir` | Point at an explicit farm directory instead of grower/farm slugs |
+| `--output` | Override the report path |
+| `--assets-dir` | Cache inlined Leaflet JS/CSS (default `<data-root>/shared/vendor`) |
+
+What it renders:
+
+- Field polygons coloured by latest CDL crop, predicted rotation crop, dominant
+  SSURGO series, median slope, soil pH, organic matter, or corn/soybean NDVI
+- Sidebar with farm KPIs, legend, field search, and click-to-zoom field list
+- Popup with crop history 2019–2023, rotation outlook, soil properties, terrain,
+  and 2021–2025 NDVI means/peaks
+- Satellite, street, terrain, and dark basemaps; GeoJSON download
+
 ## Resources
 
 - [Leaflet Documentation](https://leafletjs.com/)

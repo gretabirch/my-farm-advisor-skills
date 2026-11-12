@@ -38,6 +38,8 @@ from headlands_ring import split_headlands_and_interior, summarize_headlands
 from paths import (
     farm_boundary_path,
     farm_cdl_preferred_full_composition_path,
+    farm_interactive_map_basename,
+    farm_interactive_map_path,
     farm_manifest_dir,
     farm_report_asset_path,
     farm_report_basename,
@@ -183,6 +185,7 @@ def main() -> None:
             str(farm_ssurgo_summary_path(_DEFAULT_GROWER, _DEFAULT_FARM)),
             str(farm_weather_path(_DEFAULT_GROWER, _DEFAULT_FARM)),
             str(_cdl_csv_path().relative_to(_REPO)),
+            str(farm_interactive_map_path(_DEFAULT_GROWER, _DEFAULT_FARM)),
             *ndvi_input_paths,
         ],
         output_paths=[output_path],
@@ -227,6 +230,14 @@ def main() -> None:
     total_ac = float(farm_df.iloc[0].get("total_acres", 0))
     n_fields = int(farm_df.iloc[0].get("field_count", len(fields)))
 
+    interactive_map_path = farm_interactive_map_path(_DEFAULT_GROWER, _DEFAULT_FARM)
+    interactive_map_name = farm_interactive_map_basename(_DEFAULT_FARM)
+    interactive_map_link = (
+        f"[{interactive_map_name}](./{interactive_map_name})"
+        if interactive_map_path.exists()
+        else ""
+    )
+
     md_lines = []
     md_lines.append(f"# {_DEFAULT_FARM_NAME} Intelligence Report")
     md_lines.append("")
@@ -234,6 +245,11 @@ def main() -> None:
     md_lines.append(f"**Fields:** {n_fields}")
     md_lines.append(f"**Total Area:** {total_ac:.1f} acres")
     md_lines.append("**Analysis Period:** 2021-2025")
+    if interactive_map_link:
+        md_lines.append(
+            f"**Interactive Map:** {interactive_map_link} "
+            "(pan, zoom, and click fields in a browser)"
+        )
     md_lines.append("")
     md_lines.append("---")
     md_lines.append("")
@@ -400,6 +416,8 @@ def main() -> None:
     farm_html_name = farm_report_basename(_DEFAULT_FARM, "html")
     md_lines.append(f"- Farm Poster: [{farm_poster_name}](./{farm_poster_name})")
     md_lines.append(f"- HTML Report: [{farm_html_name}](./{farm_html_name})")
+    if interactive_map_link:
+        md_lines.append(f"- Interactive Map: {interactive_map_link}")
     md_lines.append("- Field Posters: [field_cards/](./field_cards/)")
     md_lines.append("- Soil Profile Cards: [soil_cards/](./soil_cards/)")
     md_lines.append("")

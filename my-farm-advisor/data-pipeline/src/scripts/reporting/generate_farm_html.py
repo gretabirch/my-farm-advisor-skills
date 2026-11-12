@@ -47,6 +47,8 @@ from headlands_ring import split_headlands_and_interior, summarize_headlands
 from paths import (
     farm_boundary_path,
     farm_cdl_preferred_full_composition_path,
+    farm_interactive_map_basename,
+    farm_interactive_map_path,
     farm_manifest_dir,
     farm_report_asset_path,
     farm_ssurgo_summary_path,
@@ -673,6 +675,7 @@ def main() -> None:
             str(farm_weather_path(_DEFAULT_GROWER, _DEFAULT_FARM)),
             str(_cdl_csv_path().relative_to(_REPO)),
             str(farm_report_asset_path(_DEFAULT_GROWER, _DEFAULT_FARM, "png")),
+            str(farm_interactive_map_path(_DEFAULT_GROWER, _DEFAULT_FARM)),
             str(
                 farm_summary_path(
                     _DEFAULT_GROWER, _DEFAULT_FARM, "soil_cards/farm_comparison.png"
@@ -776,6 +779,14 @@ def main() -> None:
 
     outlook_notes = _farm_crop_outlook_notes(cdl)
 
+    interactive_map_path = farm_interactive_map_path(_DEFAULT_GROWER, _DEFAULT_FARM)
+    interactive_map_link = (
+        f'<a class="header-cta" href="./{farm_interactive_map_basename(_DEFAULT_FARM)}">'
+        "Open interactive field map &rarr;</a>"
+        if interactive_map_path.exists()
+        else ""
+    )
+
     html = f"""<!doctype html>
 <html lang="en">
 <head>
@@ -785,9 +796,11 @@ def main() -> None:
   <style>
     *, *::before, *::after {{ box-sizing: border-box; }}
     body {{ font-family: Georgia, serif; margin: 0; background: #f8f7f1; color: #1e293b; line-height: 1.6; }}
-    header {{ padding: 2rem 2.5rem; background: linear-gradient(135deg, #e0f2fe, #fef3c7); border-bottom: 2px solid #bfdbfe; }}
+    header {{ padding: 2rem 2.5rem; background: linear-gradient(135deg, #e0f2fe, #fef3c7); border-bottom: 2px solid #bfdbfe; display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: center; justify-content: space-between; }}
     header h1 {{ margin: 0 0 0.25rem; font-size: 1.75rem; color: #1e3a5f; }}
     header p {{ margin: 0; color: #475569; }}
+    .header-cta {{ flex: 0 0 auto; display: inline-block; background: #1e3a5f; color: #fff; text-decoration: none; padding: 0.7rem 1.1rem; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 600; font-size: 0.9rem; }}
+    .header-cta:hover {{ background: #2b5182; }}
      .farm-overview {{ padding: 1.5rem 2.5rem; background: white; border-bottom: 1px solid #e2e8f0; }}
      .farm-overview h2 {{ margin: 0 0 0.8rem; font-size: 1.3rem; color: #1e3a5f; }}
      .farm-overview img {{ width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; }}
@@ -857,8 +870,11 @@ def main() -> None:
 </head>
 <body>
   <header>
-    <h1>{_DEFAULT_FARM_NAME} Intelligence Report</h1>
-    <p>{n_fields} fields &middot; {total_ac:.0f} total acres &middot; Data years 2021–2025 &middot; Soil, weather, crop history, headlands</p>
+    <div>
+      <h1>{_DEFAULT_FARM_NAME} Intelligence Report</h1>
+      <p>{n_fields} fields &middot; {total_ac:.0f} total acres &middot; Data years 2021–2025 &middot; Soil, weather, crop history, headlands</p>
+    </div>
+    {interactive_map_link}
   </header>
   <div class="farm-overview" id="farm-overview">
     <h2>Farm overview</h2>
