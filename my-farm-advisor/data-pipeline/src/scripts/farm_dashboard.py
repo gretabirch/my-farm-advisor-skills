@@ -36,63 +36,11 @@ from paths import (
     shared_cdl_state_raster_path,
     shared_geoadmin_counties_dir,
 )
+from us_states import STATE_FIPS
 
 COUNTIES_PATH = shared_geoadmin_counties_dir() / "counties_usa.geojson"
 NON_CONTIGUOUS = {"02", "15", "60", "66", "69", "72", "78"}
 CROP_CODE = {"corn": 1, "soybeans": 5, "wheat": 24, "cotton": 2}
-STATE_FIPS: dict[str, tuple[str, str]] = {
-    "01": ("AL", "Alabama"),
-    "02": ("AK", "Alaska"),
-    "04": ("AZ", "Arizona"),
-    "05": ("AR", "Arkansas"),
-    "06": ("CA", "California"),
-    "08": ("CO", "Colorado"),
-    "09": ("CT", "Connecticut"),
-    "10": ("DE", "Delaware"),
-    "11": ("DC", "District of Columbia"),
-    "12": ("FL", "Florida"),
-    "13": ("GA", "Georgia"),
-    "15": ("HI", "Hawaii"),
-    "16": ("ID", "Idaho"),
-    "17": ("IL", "Illinois"),
-    "18": ("IN", "Indiana"),
-    "19": ("IA", "Iowa"),
-    "20": ("KS", "Kansas"),
-    "21": ("KY", "Kentucky"),
-    "22": ("LA", "Louisiana"),
-    "23": ("ME", "Maine"),
-    "24": ("MD", "Maryland"),
-    "25": ("MA", "Massachusetts"),
-    "26": ("MI", "Michigan"),
-    "27": ("MN", "Minnesota"),
-    "28": ("MS", "Mississippi"),
-    "29": ("MO", "Missouri"),
-    "30": ("MT", "Montana"),
-    "31": ("NE", "Nebraska"),
-    "32": ("NV", "Nevada"),
-    "33": ("NH", "New Hampshire"),
-    "34": ("NJ", "New Jersey"),
-    "35": ("NM", "New Mexico"),
-    "36": ("NY", "New York"),
-    "37": ("NC", "North Carolina"),
-    "38": ("ND", "North Dakota"),
-    "39": ("OH", "Ohio"),
-    "40": ("OK", "Oklahoma"),
-    "41": ("OR", "Oregon"),
-    "42": ("PA", "Pennsylvania"),
-    "44": ("RI", "Rhode Island"),
-    "45": ("SC", "South Carolina"),
-    "46": ("SD", "South Dakota"),
-    "47": ("TN", "Tennessee"),
-    "48": ("TX", "Texas"),
-    "49": ("UT", "Utah"),
-    "50": ("VT", "Vermont"),
-    "51": ("VA", "Virginia"),
-    "53": ("WA", "Washington"),
-    "54": ("WV", "West Virginia"),
-    "55": ("WI", "Wisconsin"),
-    "56": ("WY", "Wyoming"),
-}
 
 
 def _runtime_relative(path: Path) -> str:
@@ -297,14 +245,22 @@ def _inventory_path_for_farm(grower_slug: str, farm_slug: str) -> Path:
 def _run_bootstrap_for_counties(
     *,
     counties: list[dict[str, str]],
-    field_count: int,
+    field_count: int | None,
+    fill_to: int | None,
     seed: int,
     grower_slug: str,
     farm_slug: str,
     farm_name: str,
 ) -> Path:
     inventory_path = _inventory_path_for_farm(grower_slug, farm_slug)
-    distribution = _field_allocation(field_count, len(counties))
+    if fill_to is None:
+        if field_count is None:
+            raise ValueError("--field-count is required when --fill-to is not set")
+        distribution = _field_allocation(field_count, len(counties))
+    else:
+        if len(counties) != 1:
+            raise ValueError("--fill-to supports a single county per farm")
+        distribution = []
 
     for idx, county in enumerate(counties):
         cmd = [
@@ -314,8 +270,6 @@ def _run_bootstrap_for_counties(
             county["state_fips"],
             "--county-name",
             county["county_name"],
-            "--count",
-            str(distribution[idx]),
             "--seed",
             str(seed + idx),
             "--grower-slug",
@@ -327,8 +281,12 @@ def _run_bootstrap_for_counties(
             "--inventory-csv",
             str(inventory_path),
         ]
-        if idx > 0:
-            cmd.append("--append")
+        if fill_to is not None:
+            cmd.extend(["--fill-to", str(fill_to)])
+        else:
+            cmd.extend(["--count", str(distribution[idx])])
+            if idx > 0:
+                cmd.append("--append")
         _run(cmd)
 
     return inventory_path
@@ -398,6 +356,8 @@ def _parse_csv_values(raw: str | None) -> list[str]:
 
 
 def create_command(args: argparse.Namespace) -> None:
+    if args.field_count is None and args.fill_to is None:
+        raise ValueError("provide --field-count or --fill-to")
     state = _resolve_state(
         state=args.state,
         state_fips=args.state_fips,
@@ -431,6 +391,7 @@ def create_command(args: argparse.Namespace) -> None:
     inventory = _run_bootstrap_for_counties(
         counties=counties,
         field_count=args.field_count,
+        fill_to=args.fill_to,
         seed=args.seed,
         grower_slug=args.grower_slug,
         farm_slug=farm_slug,
@@ -558,7 +519,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="Comma-separated FIPS codes for selector=fips",
     )
     create.add_argument("--county-limit", type=int, default=None)
-    create.add_argument("--field-count", type=int, required=True)
+    create.add_argument(
+        "--field-count",
+        type=int,
+        default=None,
+        help="Number of fields to sample when creating a farm",
+    )
+    create.add_argument(
+        "--fill-to",
+        type=int,
+        default=None,
+        help=(
+            "Top up an existing farm to this many total fields, keeping the fields "
+            "already present. Alternative to --field-count."
+        ),
+    )
     create.add_argument("--seed", type=int, default=42)
     create.add_argument("--grower-slug", required=True)
     create.add_argument("--farm-slug", default=None)

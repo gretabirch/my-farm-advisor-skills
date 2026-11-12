@@ -48,6 +48,19 @@ cd my-farm-advisor/data-pipeline
 
 Use this pattern when the user asks to initialize the data-pipeline and seed X fields for a grower in a specified state. The seeded farm slug and farm name can be omitted; `farm_dashboard.py create` derives stable defaults from grower and state. Because this path runs the full farm pipeline after seeding boundaries, derived tables, field weather, real DEM terrain, soil outputs, CDL history, satellite/NDVI products, reports, cards, posters, and HTML/Markdown farm reports should generate automatically. The generated farm and field reports do not integrate terrain metrics in this change.
 
+To grow an existing farm instead of reseeding it, pass `--fill-to N` (single county per farm) in place of `--field-count`:
+
+```bash
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" \
+  scripts/farm_dashboard.py create \
+  --selector fips --fips-level l2 --fips-codes 31185 --state Nebraska \
+  --fill-to 10 --seed 79 \
+  --grower-slug ne-york-grower --farm-slug york-demo-farm \
+  --farm-name "York Demo Farm"
+```
+
+`--fill-to` keeps existing field IDs, samples only the missing count, and no-ops when the farm already has enough fields. `--field-count` replaces the selection, which would orphan per-field data.
+
 Current-shell export for an existing runtime:
 
 ```bash

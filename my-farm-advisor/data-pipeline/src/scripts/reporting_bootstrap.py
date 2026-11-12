@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from lib.runtime_paths import resolve_runtime_paths
+from lib.us_states import state_code_from_fips
 
 
 _RUNTIME_PATHS = resolve_runtime_paths()
@@ -112,6 +113,36 @@ def fields_root(
     grower_slug: str = DEFAULT_GROWER, farm_slug: str = DEFAULT_FARM
 ) -> Path:
     return farm_root(grower_slug, farm_slug) / "fields"
+
+
+def _farm_state_code(farm: Path) -> str:
+    """Derive the farm's USPS state code from its boundary or existing manifest."""
+    existing = ""
+    manifest = farm / "farm.json"
+    if manifest.exists():
+        try:
+            existing = str(json.loads(manifest.read_text(encoding="utf-8")).get("state") or "")
+        except (OSError, ValueError):
+            existing = ""
+
+    boundary = farm / "boundary" / "field_boundaries.geojson"
+    if not boundary.exists():
+        return existing
+    try:
+        document = json.loads(boundary.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return existing
+
+    counts: dict[str, int] = {}
+    for feature in document.get("features", []):
+        raw = str((feature.get("properties") or {}).get("state_fips") or "").strip()
+        if raw:
+            key = raw.zfill(2)
+            counts[key] = counts.get(key, 0) + 1
+    if not counts:
+        return existing
+    dominant = max(counts, key=counts.__getitem__)
+    return state_code_from_fips(dominant, fallback=existing or dominant)
 
 
 def field_slugs_from_inventory(inventory_path: Path | None = None) -> list[str]:
@@ -412,7 +443,7 @@ def ensure_canonical_data_tree(
             "grower_slug": grower_slug,
             "farm_slug": farm_slug,
             "display_name": farm_name,
-            "state": "IA",
+            "state": _farm_state_code(farm),
             "country": "US",
             "default_crs": "EPSG:4326",
             "notes": "Canonical farm metadata",

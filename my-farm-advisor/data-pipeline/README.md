@@ -102,6 +102,19 @@ cd "${DATA_PIPELINE_DATA_ROOT}/data-pipeline/src"
   --farm-name "Acme Illinois Farm"
 ```
 
+To expand a farm that already has fields, use `--fill-to` instead of `--field-count`:
+
+```bash
+"${DATA_PIPELINE_DATA_ROOT}/data-pipeline/.venv/bin/python" \
+  scripts/farm_dashboard.py create \
+  --selector fips --fips-level l2 --fips-codes 17037 --state Illinois \
+  --fill-to 10 --seed 77 \
+  --grower-slug acme-grower --farm-slug acme-demo-farm \
+  --farm-name "Acme Demo Farm"
+```
+
+`--fill-to N` keeps the fields already present in the farm boundary, samples only enough additional polygons to reach `N` total, and becomes a no-op once the farm has `N` fields, so it is safe to re-run. `--field-count` samples a fresh set and replaces the existing selection; use it for first-time creation only. `--fill-to` currently supports one county per farm.
+
 `DATA_PIPELINE_DATA_ROOT` is required. Set it to an absolute writable path outside the skill checkout before running the installer or any pipeline entrypoint. There is no implicit fallback to a platform workspace path or to a checkout-local `data/` directory.
 
 The installer creates and refreshes the runtime tree under:
