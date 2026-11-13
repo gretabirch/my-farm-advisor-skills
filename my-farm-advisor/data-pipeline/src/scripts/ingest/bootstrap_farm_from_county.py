@@ -198,6 +198,30 @@ def _sample_fields(gdf: gpd.GeoDataFrame, *, count: int, seed: int) -> gpd.GeoDa
     return sampled.sort_values("field_id").reset_index(drop=True)
 
 
+def _load_existing_fields(boundary_path: Path) -> gpd.GeoDataFrame | None:
+    if not boundary_path.exists():
+        return None
+    try:
+        existing = gpd.read_file(boundary_path)
+    except Exception:
+        return None
+    if existing.empty or "field_id" not in existing.columns:
+        return None
+    return existing
+
+
+def _sample_fields_excluding(
+    gdf: gpd.GeoDataFrame, *, count: int, exclude_ids: set[str], seed: int
+) -> gpd.GeoDataFrame:
+    """Sample ``count`` new fields while leaving already-kept fields untouched."""
+    if gdf.empty:
+        return gdf
+    pool = gdf
+    if exclude_ids:
+        pool = gdf[~gdf["field_id"].astype(str).isin(exclude_ids)].copy()
+    return _sample_fields(pool, count=count, seed=seed)
+
+
 def _write_inventory(path: Path, fields: gpd.GeoDataFrame) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -284,6 +308,15 @@ def main() -> None:
     )
     parser.add_argument("--county-name", required=True, help="County name, e.g. Boone")
     parser.add_argument("--count", type=int, default=4, help="Number of fields to sample")
+    parser.add_argument(
+        "--fill-to",
+        type=int,
+        default=None,
+        help=(
+            "Top up the farm to this many total fields, keeping fields that already "
+            "exist. Overrides --count and re-running is a no-op once reached."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=42, help="Deterministic seed")
     parser.add_argument("--grower-slug", required=True)
     parser.add_argument("--farm-slug", required=True)
@@ -327,9 +360,6 @@ def main() -> None:
         county_fips=county_fips,
         county_name=county_name,
     )
-    sampled = _sample_fields(fields, count=args.count, seed=args.seed)
-    if sampled.empty:
-        raise RuntimeError("No eligible farmland polygons found for requested county")
 
     default_inventory = (
         farm_manifest_dir(args.grower_slug, args.farm_slug) / "field-inventory.csv"
@@ -345,8 +375,35 @@ def main() -> None:
     boundary_out = boundary_out if boundary_out.is_absolute() else _runtime_path(boundary_out)
     boundary_out.parent.mkdir(parents=True, exist_ok=True)
 
-    final_fields = sampled
-    if args.append:
+    if args.fill_to is not None:
+        if args.fill_to < 1:
+            raise SystemExit("--fill-to must be at least 1")
+        existing = _load_existing_fields(boundary_out)
+        current_ids = (
+            set(existing["field_id"].astype(str)) if existing is not None else set()
+        )
+        deficit = args.fill_to - len(current_ids)
+        if deficit <= 0:
+            print(
+                json.dumps(
+                    {
+                        "grower_slug": args.grower_slug,
+                        "farm_slug": args.farm_slug,
+                        "fill_to": args.fill_to,
+                        "final_field_count": len(current_ids),
+                        "action": "noop_already_at_target",
+                    },
+                    indent=2,
+                )
+            )
+            if args.run_pipeline:
+                _run_farm_pipeline(args, boundary_out, inventory_path)
+            return
+        sampled = _sample_fields_excluding(
+            fields, count=deficit, exclude_ids=current_ids, seed=args.seed
+        )
+        if sampled.empty:
+            raise RuntimeError("No eligible farmland polygons found for requested county")
         final_fields = _merge_with_existing(
             grower_slug=args.grower_slug,
             farm_slug=args.farm_slug,
@@ -354,7 +411,19 @@ def main() -> None:
             new_fields=sampled,
         )
     else:
-        _write_inventory(inventory_path, sampled)
+        sampled = _sample_fields(fields, count=args.count, seed=args.seed)
+        if sampled.empty:
+            raise RuntimeError("No eligible farmland polygons found for requested county")
+        final_fields = sampled
+        if args.append:
+            final_fields = _merge_with_existing(
+                grower_slug=args.grower_slug,
+                farm_slug=args.farm_slug,
+                inventory_path=inventory_path,
+                new_fields=sampled,
+            )
+        else:
+            _write_inventory(inventory_path, sampled)
 
     final_fields.to_file(boundary_out, driver="GeoJSON")
 
@@ -371,6 +440,7 @@ def main() -> None:
         "boundary_path": _runtime_relative(boundary_out),
         "inventory_csv": _runtime_relative(inventory_path),
         "append": bool(args.append),
+        "fill_to": args.fill_to,
     }
     print(json.dumps(summary, indent=2))
 
