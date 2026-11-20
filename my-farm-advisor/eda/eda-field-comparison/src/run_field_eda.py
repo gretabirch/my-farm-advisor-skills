@@ -25,6 +25,16 @@ import eda_figures as figures
 import eda_stats as stats
 
 
+# Comparison levels every figure declares. Keeping the vocabulary closed makes
+# the coverage auditable from manifest.json instead of prose.
+LEVELS = {
+    "field": "one row per field: cross-sectional geometry or five-year means",
+    "field-year": "one row per field per year: repeated observations and change over time",
+    "grower": "grouped by grower: differences among the fields of one grower",
+    "across-grower": "growers compared with each other",
+}
+
+
 FIGURES = [
     dict(
         id="A1", key="area_by_grower", file="01_field_area_by_grower.png",
@@ -32,7 +42,7 @@ FIGURES = [
         question="How different are the operating units across the three growers?",
         story="IL runs ~6-14x larger parcels than IA/NE (median 98 vs 7 vs 15 ac); total acres "
               "span 2,354 / 489 / 329, so the same 10-field sample covers very different ground.",
-        levels=["within-grower", "across-growers"],
+        levels=["field", "grower", "across-grower"],
         caveat="10 fields per grower; the Kruskal-Wallis p-value is descriptive, not a "
                "population test.",
     ),
@@ -43,7 +53,7 @@ FIGURES = [
         story="Compactness falls with area (ρ = -0.48): the 250-730 ac parcels are long or "
               "perforated, while sub-10-acre parcels are simple rectangles. Shape is not sensing "
               "quality — sub-acre fields are weak because they are only a few 30 m pixels wide.",
-        levels=["within-grower", "across-growers"],
+        levels=["field", "grower", "across-grower"],
         caveat="Static geometry only — shape has no time dimension. PP is scale-free but "
                "sensitive to digitising noise on sub-acre parcels.",
     ),
@@ -54,7 +64,7 @@ FIGURES = [
         story="25 of 29 fields classify at 95 %+; the four gaps are the 0.6-17 ac parcels where "
               "mixed edge pixels dominate. Each field's cover moves <2 pp across five years, so a "
               "gap is an edge effect, not annual change.",
-        levels=["within-field (time)", "within-grower", "across-growers"],
+        levels=["field", "field-year", "grower", "across-grower"],
         caveat="CDL is 30 m; sub-10-acre parcels can lose a large share of pixels to mixed edges.",
     ),
     dict(
@@ -63,7 +73,7 @@ FIGURES = [
         question="How are the parcels arranged on the ground?",
         story="Each 'farm' is 10 parcels scattered across a county (20-54 km span), not one "
               "contiguous block; scale and dispersion differ sharply between growers.",
-        levels=["within-grower", "across-growers"],
+        levels=["field", "grower", "across-grower"],
         caveat="OSM/CSB boundaries are not survey-grade. County-scale panels show layout, not "
                "within-field detail.",
     ),
@@ -73,7 +83,7 @@ FIGURES = [
         question="What is each field made of, 2019-2023?",
         story="Corn/soy dominate the arable parcels, but whole parcels are forest/grass in IA and "
               "NE; IL also carries wheat and alfalfa. A mean composition hides rotation.",
-        levels=["within-grower", "across-growers"],
+        levels=["field", "grower", "across-grower"],
         caveat="Shares are averaged over five years and renormalised to 100 %, hiding both "
                "rotation and coverage loss.",
     ),
@@ -83,7 +93,7 @@ FIGURES = [
         question="Which fields rotate, which are continuous, which are not cropland at all?",
         story="Continuous corn, clean corn-soy alternation, and stable forest/grass all appear; "
               "IA has one field with no CDL rows at all (blank, not zero).",
-        levels=["within-field (time)", "within-grower", "across-growers"],
+        levels=["field", "field-year", "grower", "across-grower"],
         caveat="Dominant class only; a 60/40 split is drawn as one colour. Mixed pixels can flip "
                "the dominant class on small parcels.",
     ),
@@ -94,7 +104,7 @@ FIGURES = [
         story="Rotation is field-specific, not grower-specific: blocks alternate reliably or stay "
               "continuous within the same farm (KW p = 0.16, ε² = 0.06), and diversity has no "
               "size trend (ρ = -0.10, p = 0.59).",
-        levels=["within-field (time)", "within-grower", "across-growers"],
+        levels=["field", "field-year", "grower", "across-grower"],
         caveat="Four transitions per field is a tiny sample; class-change counts are sensitive to "
                "CDL classification noise.",
     ),
@@ -104,7 +114,7 @@ FIGURES = [
         question="How do the fields sit inside the surrounding cropland mosaic?",
         story="Arable parcels are embedded in a mixed county mosaic; the NE/IA farm includes "
               "forest and pasture parcels that are not cropland at all.",
-        levels=["within-grower", "across-growers"],
+        levels=["field", "grower", "across-grower"],
         caveat="One CDL year only. Raster shown unmasked so surrounding land use stays visible.",
     ),
     dict(
@@ -114,7 +124,7 @@ FIGURES = [
         story="Year-to-year swings dominate: the same grower moves 200-290 mm between seasons, "
               "while grower medians differ by ~50 mm (IL highest, NE lowest). Fields inside one "
               "grower move together because they share a POWER cell.",
-        levels=["within-field (time)", "across-growers"],
+        levels=["field-year", "grower", "across-grower"],
         caveat="NASA POWER ~50 km cells; IA's 10 fields share ONE daily series, so field spread "
                "inside a grower is not microclimate.",
     ),
@@ -124,7 +134,7 @@ FIGURES = [
         question="Does heat accumulation differ inside a farm or only between farms?",
         story="Curves inside a farm overlap exactly — one or two NASA POWER cells per farm, never "
               "one per field — while growers separate, with NE accumulating the most heat.",
-        levels=["within-field (time)", "within-grower", "across-growers"],
+        levels=["field-year", "grower"],
         caveat="Base 10 °C, May-Sep window, no crop-specific base temperature; overlap is grid "
                "resolution, not identical fields.",
     ),
@@ -135,7 +145,7 @@ FIGURES = [
         story="Rain is year-driven (58 %) and heat is grower-driven (81 %); field-within-grower is "
               "0-2 % in both. The pooled precip-GDD ρ = -0.54 is a between-year relation — "
               "inside a single year it runs from -0.69 to +0.32.",
-        levels=["within-field (time)", "within-grower", "across-growers"],
+        levels=["field", "field-year", "grower", "across-grower"],
         caveat="Nested sequential R² on 30 fields x 5 years; descriptive shares, no causal claim.",
     ),
     dict(
@@ -144,11 +154,20 @@ FIGURES = [
         question="Why do fields inside one farm report identical weather?",
         story="Fields fall into one or two NASA POWER cells per farm; IL and NE straddle a cell "
               "boundary, IA sits inside a single cell.",
-        levels=["within-grower", "across-growers"],
+        levels=["field", "grower", "across-grower"],
         caveat="Cell registration follows the POWER 0.5 deg x 0.625 deg lattice with centres at "
                "0.25 + 0.5k; verified against identical-series groups in all three farms.",
     ),
 ]
+
+
+def level_coverage() -> dict:
+    """Figure ids that exercise each comparison level."""
+    used = {lvl for spec in FIGURES for lvl in spec["levels"]}
+    unknown = sorted(used - set(LEVELS))
+    if unknown:
+        raise SystemExit(f"unknown comparison level(s): {', '.join(unknown)}")
+    return {lvl: [spec["id"] for spec in FIGURES if lvl in spec["levels"]] for lvl in LEVELS}
 
 
 def parse_args(argv=None) -> argparse.Namespace:
@@ -352,6 +371,11 @@ def main(argv=None) -> int:
         "field_labels": geometry[["grower_slug", "farm_slug", "field_id", "field_label", "area_acres"]]
         .to_dict("records"),
         "tables": {name: f"tables/{name}" for name in tables},
+        "levels": {
+            "vocabulary": LEVELS,
+            "coverage": level_coverage(),
+            "missing": [lvl for lvl, ids in level_coverage().items() if not ids],
+        },
         "figures": rendered,
         "failed_figures": failed,
         "field_year_counts": {

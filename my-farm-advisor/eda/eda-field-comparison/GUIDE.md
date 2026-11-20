@@ -72,22 +72,45 @@ maps re-fetch satellite tiles). Add `--figures A1,C3` to rebuild a subset.
 with its story, caveat, and comparison level, so a document can be assembled
 without re-reading the data.
 
+## Comparison levels
+
+Every figure declares one or more of four levels; `manifest.json` carries the
+same vocabulary under `levels.vocabulary`, plus `levels.coverage` (figure ids
+per level) and `levels.missing` (must stay empty).
+
+| Level | What it means | Figures |
+|---|---|---|
+| `field` | one row per field: cross-sectional geometry or five-year means | A1, A2, A-map, B1, B-map, C-map |
+| `field-year` | one row per field per year: repeated observations and change over time | A3, B2, B3, C1, C2, C3 |
+| `grower` | grouped by grower: differences among the fields of one grower | all 12 |
+| `across-grower` | growers compared with each other | A1, A2, A3, A-map, B1, B2, B3, B-map, C1, C3, C-map |
+
+The three categories (A geometry, B CDL, C weather) each contribute two
+statistical visualizations, one comparison/correlation panel, and one
+geospatial map:
+
+| Category | Statistical visualizations | Comparison / correlation | Map |
+|---|---|---|---|
+| A geometry | A1 area by grower, A2 area vs compactness | A3 CDL coverage vs area and its year-to-year stability | A-map |
+| B CDL | B1 composition per field, B2 field × year classes | B3 rotation change vs diversity | B-map |
+| C weather | C1 season precipitation, C2 cumulative GDD | C3 variance decomposition + precip/GDD | C-map |
+
 ## The twelve figures
 
-| ID | Figure | Level | Story |
+| ID | Figure | Levels | Story |
 |---|---|---|---|
-| A1 | field area by grower | across growers | field size spans two orders of magnitude |
-| A2 | area vs compactness | across growers | the biggest parcels are the most irregular; the smallest are only a few pixels wide |
-| A3 | CDL coverage | comparison | coverage gaps sit on the smallest parcels, not on a year trend |
-| A-map | farm boundary maps | locator | fields are scattered parcels, not one block |
-| B1 | CDL composition per field | within grower | mean crop mix hides the rotation |
-| B2 | dominant class, field × year | within field | rotation is field-specific |
-| B3 | rotation change vs diversity | comparison | rotation diversity has no grower signal and no size trend |
-| B-map | CDL 2023 mosaic | locator | the mosaic continues inside every parcel |
-| C1 | growing-season precipitation | across growers | year-to-year swings dwarf field differences |
-| C2 | cumulative GDD | within grower | one or two grid cells per farm, never one per field |
-| C3 | variance decomposition + precip/GDD scatter | comparison | rain is year-driven, heat is grower-driven |
-| C-map | NASA POWER cells | locator | weather is sampled on a ~50 km grid |
+| A1 | field area by grower | field, grower, across-grower | field size spans two orders of magnitude |
+| A2 | area vs compactness | field, grower, across-grower | the biggest parcels are the most irregular; the smallest are only a few pixels wide |
+| A3 | CDL coverage | field, field-year, grower, across-grower | coverage gaps sit on the smallest parcels, not on a year trend |
+| A-map | farm boundary maps | field, grower, across-grower | fields are scattered parcels, not one block |
+| B1 | CDL composition per field | field, grower, across-grower | mean crop mix hides the rotation |
+| B2 | dominant class, field × year | field, field-year, grower, across-grower | rotation is field-specific |
+| B3 | rotation change vs diversity | field, field-year, grower, across-grower | rotation diversity has no grower signal and no size trend |
+| B-map | CDL 2023 mosaic | field, grower, across-grower | the mosaic continues inside every parcel |
+| C1 | growing-season precipitation | field-year, grower, across-grower | year-to-year swings dwarf field differences |
+| C2 | cumulative GDD | field-year, grower | one or two grid cells per farm, never one per field |
+| C3 | variance decomposition + precip/GDD scatter | field-year, grower, across-grower | rain is year-driven, heat is grower-driven |
+| C-map | NASA POWER cells | field, grower, across-grower | weather is sampled on a ~50 km grid |
 
 Story text lives in `FIGURES` in `src/run_field_eda.py`; change it there, not in
 the prose of downstream documents.
