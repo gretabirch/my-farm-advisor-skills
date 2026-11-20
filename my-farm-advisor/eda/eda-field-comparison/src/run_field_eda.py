@@ -121,9 +121,9 @@ FIGURES = [
         id="C1", key="season_precip", file="09_growing_season_precip.png",
         title="Growing-season precipitation by grower and year",
         question="What dominates variation in seasonal water supply?",
-        story="Year-to-year swings dominate: the same grower moves 200-290 mm between seasons, "
-              "while grower medians differ by ~50 mm (IL highest, NE lowest). Fields inside one "
-              "grower move together because they share a POWER cell.",
+        story="Year-to-year swings dominate: a grower's median season moves 144-288 mm between "
+              "its driest and wettest year, while grower medians differ by ~50 mm (IL highest, "
+              "NE lowest). Fields inside one grower move together because they share a POWER cell.",
         levels=["field-year", "grower", "across-grower"],
         caveat="NASA POWER ~50 km cells; IA's 10 fields share ONE daily series, so field spread "
                "inside a grower is not microclimate.",

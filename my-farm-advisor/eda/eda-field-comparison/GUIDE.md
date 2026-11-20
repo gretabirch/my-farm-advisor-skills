@@ -72,6 +72,10 @@ maps re-fetch satellite tiles). Add `--figures A1,C3` to rebuild a subset.
 with its story, caveat, and comparison level, so a document can be assembled
 without re-reading the data.
 
+Assembling the document is a separate, one-time step — this workflow writes no
+prose. A worked example of that step lives in
+[`examples/report/`](examples/report/field-eda-report.md).
+
 ## Comparison levels
 
 Every figure declares one or more of four levels; `manifest.json` carries the
