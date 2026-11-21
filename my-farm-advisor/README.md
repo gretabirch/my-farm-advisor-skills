@@ -308,6 +308,7 @@ Examples:
 
 - "Rebuild the farm from source systems" -> [`data-sources/farm-data-rebuild/AGENTS.md`](data-sources/farm-data-rebuild/AGENTS.md)
 - "Generate field boundaries or map views" -> [`field-management/field-boundaries/GUIDE.md`](field-management/field-boundaries/GUIDE.md)
+- "Compare fields and growers on boundaries, CDL, and weather" -> [`eda/eda-field-comparison/GUIDE.md`](eda/eda-field-comparison/GUIDE.md) (worked report: [`examples/report/field-eda-report.md`](eda/eda-field-comparison/examples/report/field-eda-report.md))
 - "Check weather and maturity planning" -> [`weather/INDEX.md`](weather/INDEX.md) and [`strategy/INDEX.md`](strategy/INDEX.md)
 - "Prepare a farm intelligence report" -> [`data-sources/farm-intelligence-reporting/AGENTS.md`](data-sources/farm-intelligence-reporting/AGENTS.md)
 
