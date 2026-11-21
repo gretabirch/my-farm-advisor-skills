@@ -9,8 +9,9 @@ stays report-free.
 
 | Path | Content |
 |---|---|
+| `field-eda-summary.md` | one-page version: three sections, three figures, headline numbers only |
 | `field-eda-report.md` | the assembled report: three categories, four comparison levels, numbers quoted from `comparisons.json` |
-| `figures/*.jpg` | six of the twelve figures at 1200 px, re-encoded from the run output (≈0.9 MB total) |
+| `figures/*.jpg` | six of the twelve EDA figures plus three soil-texture panels, 1200 px, re-encoded from the run output (≈1.1 MB total) |
 
 ## How it was produced
 

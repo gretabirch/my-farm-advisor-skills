@@ -148,6 +148,50 @@ about pooled correlations on gridded weather, not a finding about any field.
 - Boundaries are OSM/CSB parcels, not survey-grade. CDL is 30 m and annual.
   NASA POWER is a ~50 km grid. Three growers is a demonstration, not a sample.
 
+## Appendix — soil texture (separate workflow)
+
+The EDA workflow above covers boundaries, CDL and weather only; soil was out of
+scope by design. This appendix comes from a separate SSURGO import
+(`generate_field_texture_summary.py`, `generate_texture_comparison.py`): 0–20 cm
+topsoil, thickness-weighted per component, weighted by component share and map
+unit area, 30 fields, USDA class from the same triangle geometry the rest of the
+repo uses.
+
+![Sand and clay by grower, with all 30 fields on the USDA triangle](figures/soil_texture_comparison.jpg)
+
+| Component | Kruskal–Wallis | ε² | Medians (IL / IA / NE) | Pairwise (Holm) |
+|---|---|---|---|---|
+| Sand | p < 0.001 | 0.86 | 7.2 / 33.6 / 12.4 % | all three pairs p = 0.001 |
+| Silt | p < 0.001 | 0.88 | 68.3 / 40.8 / 62.2 % | all three pairs p = 0.001 |
+| Clay | p = 0.159 | 0.06 | 23.5 / 26.0 / 24.8 % | none separate |
+
+Sand separates the growers almost completely and clay does not separate them at
+all: all thirty fields sit between 19 and 30 % clay. The texture difference is a
+sand–silt trade, which is why Illinois and Nebraska are both silt loam while Iowa
+straddles loam and clay loam.
+
+![Percent sand by grower](figures/soil_texture_sand.jpg)
+
+Illinois tops out at 12 % sand; Iowa bottoms out at 25 %. Nebraska is the only
+grower with real within-farm spread — Hastings fields sit near 12 % sand, the
+three Hord fields carry 19–26 %.
+
+![Percent clay by grower](figures/soil_texture_clay.jpg)
+
+Clay medians sit within 2.5 points of each other and the spread inside a grower
+is as wide as the gap between growers. Reading clay alone would call these three
+farms the same soil.
+
+| Grower | Classes | Dominant series |
+|---|---|---|
+| IL | silt loam ×10 | Danabrook ×5, Wingate ×2 |
+| IA | loam ×6, clay loam ×4 | Nicollet ×4, Clarion ×3 |
+| NE | silt loam ×10 | Hastings ×7, Hord ×3 |
+
+These are 30 fields from three farms in three states, sampled through a 0–20 cm
+topsoil average; they describe these parcels, not their regions. The same caveat
+as everywhere else applies: no yield, no management, no causal claim.
+
 ## Reproducing this report
 
 ```bash
@@ -161,3 +205,19 @@ The run writes twelve figures, six tables, `comparisons.json` (every statistic
 quoted above) and `manifest.json` (title, story, caveat and comparison levels
 per figure). This report reuses six of the twelve figures at reduced size; the
 full-resolution set stays in the run directory and is not committed.
+
+The soil appendix is a separate two-step run — per-farm texture, then the
+cross-farm comparison:
+
+```bash
+R=$HOME/my-farm-advisor-runtime/data-pipeline/growers
+PY=$HOME/my-farm-advisor-runtime/data-pipeline/.venv/bin/python
+for F in il-dekalb-grower/farms/dekalb-demo-farm \
+         ia-story-grower/farms/story-demo-farm \
+         ne-york-grower/farms/york-demo-farm; do
+  $PY my-farm-advisor/data-pipeline/src/scripts/reporting/generate_field_texture_summary.py \
+      --farm-dir $R/$F
+done
+$PY my-farm-advisor/data-pipeline/src/scripts/reporting/generate_texture_comparison.py \
+    --tables $R/*/farms/*/derived/tables/*_field_texture.csv
+```
